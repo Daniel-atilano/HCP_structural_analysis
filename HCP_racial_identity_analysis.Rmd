@@ -1,14 +1,12 @@
 ---
 title: "HCP racial identity analysis"
-author: "daniel atilano"
+author: "Daniel atilano"
 date: "6/3/2022"
 output:
   rmdformats::material:
     highlight: kate
 ---
 ```{r setup2, include=FALSE}
-knitr::opts_chunk$set(error = TRUE)
-
 library(readr)
 library(tidyr)
 library(dplyr)
@@ -18,6 +16,7 @@ library(gtsummary)
 library(gt)
 library(lmPerm)
 library(gghalves)
+library(ggsignif)
 ```
 
 
@@ -1645,3 +1644,472 @@ theme_light(base_size = 12, base_family = "Arial") +
 plot_wrap_all_regions_surface_area
 
 ```
+
+# 4. HCP sample paired 
+
+### The sample was selected aiming to pair Whites and African American identities by age, education, economic income and gender. 
+
+```{r include=FALSE}
+data_connectomehcp_filtered_paired <- read_csv(" data_connectomehcp_filtered_paired.csv")
+```
+
+```{r}
+### Factorized GENDER, RACIAL IDENTITY, and ECONOMIC INCOME variables
+
+data_connectomehcp_filtered_paired$Racial_identity <- factor(data_connectomehcp_filtered_paired$Racial_identity, levels = c("White","Black or African Am."),labels = c("0","1"))
+
+data_connectomehcp_filtered_paired$Gender <-factor(data_connectomehcp_filtered_paired$Gender, levels = c("M","F"),labels = c("0","1"))
+
+data_connectomehcp_filtered_paired$Gender <-factor(data_connectomehcp_filtered_paired$Gender, levels = c("0","1"),labels = c("M","F"))
+
+data_connectomehcp_filtered_paired$Racial_identity <- factor(data_connectomehcp_filtered_paired$Racial_identity, levels = c("0","1"),labels = c("White","Black or African Am."))
+
+
+```
+
+```{r}
+data_connectomehcp_filtered_paired_table_descriptives <- data_connectomehcp_filtered_paired %>% select(Age_in_Yrs,Racial_identity,SSAGA_Educ,Gender,SSAGA_Income) %>% tbl_summary(by = Racial_identity, label = list( Age_in_Yrs ~ "Age (y)", SSAGA_Educ ~ "Education(y)", Gender ~ "Sex", SSAGA_Income ~ "Economic Income "), type = list(SSAGA_Educ ~ 'continuous'), statistic = c("Age_in_Yrs", "SSAGA_Educ") ~ "{mean} ({sd})", digits = all_continuous() ~ 2) %>% add_p(pvalue_fun = ~style_pvalue(.x, digits = 3), list(all_continuous() ~ "t.test")) %>%  add_n() %>%     modify_caption("**Table 1. Descriptives for racial identity**") %>% modify_header(label ~ "")  %>%  bold_labels() %>% modify_spanning_header(all_stat_cols() ~ "**Racial Identity**") %>% as_gt()%>% opt_align_table_header(align = "left") 
+
+data_connectomehcp_filtered_paired_table_descriptives
+
+```
+
+# 5. Brain volume analysis of paired sample t-test
+
+```{r}
+## Selection of brain volumetric and Racial identity variables
+
+
+data_connectomehcp_filtered_paired_volumetry <- data_connectomehcp_filtered_paired %>% select(c(2,142:192))
+
+
+## t-test analysis with homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_volumetry_t_test  <- lapply(data_connectomehcp_filtered_paired_volumetry[c(8,11,12,13,14,15,16,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,38,41,42,44,46,47,48:52)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = TRUE))
+
+data_connectomehcp_filtered_paired_volumetry_t_test 
+
+```
+
+```{r}
+## Welch t-test analysis with non-homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_volumetry_welcht_test  <- lapply(data_connectomehcp_filtered_paired_volumetry[c(2:7,9,10,17,18,19,35,36,37,39,40,43,45)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = FALSE))
+
+data_connectomehcp_filtered_paired_volumetry_welcht_test 
+```
+
+
+##  Multiple comparisons correction Holm-Bonferroni method
+
+```{r echo=TRUE}
+
+# p-values t-test analysis with homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_volumetry_t_test <- sapply(data_connectomehcp_filtered_paired_volumetry[c(8,11,12,13,14,15,16,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,38,41,42,44,46,47,48:52)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = TRUE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_volumetry_t_test <- as.data.frame(pvalues_data_connectomehcp_filtered_paired_volumetry_t_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_volumetry_t_test) %>% dplyr::select(1)
+
+
+
+# p-values Welch t-test analysis with non-homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test <- sapply(data_connectomehcp_filtered_paired_volumetry[c(2:7,9,10,17,18,19,35,36,37,39,40,43,45)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = FALSE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test <- as.data.frame(pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test) %>% dplyr::select(1)
+
+
+##  Merge of p-values dataframes for multiple comparison analysis
+
+holm_comparisons_data_connectomehcp_filtered_paired_volumetry <-rbind(pvalues_data_connectomehcp_filtered_paired_volumetry_t_test,pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test)
+
+## Execution of Holm-Bonferroni multiple comparison analysis 
+
+holm_comparisons_data_connectomehcp_filtered_paired_volumetry$Holm =p.adjust(holm_comparisons_data_connectomehcp_filtered_paired_volumetry$pvalue,method ="holm") 
+
+```
+
+
+```{r echo=FALSE}
+knitr::kable(holm_comparisons_data_connectomehcp_filtered_paired_volumetry, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
+```
+
+### Graphs of brain volumetry with statistical significance after multiple comparisons analysis
+
+### Optic Chiasm (p < .05)
+
+```{r}
+data_connectomehcp_filtered_paired_volumetry_optic_chiasm <- data_connectomehcp_filtered_paired_volumetry %>%  group_by(Racial_identity) %>% dplyr::select(c(1,47))%>% dplyr::rename(
+    "Optic Chiasm"= OpticChiasm_Vol) %>% gather(key = "volumetry", value = "cubic_milimeters_ICV", -Racial_identity)
+
+
+optic_chiasm_paired_plot <- ggplot(data = data_connectomehcp_filtered_paired_volumetry_optic_chiasm, aes(y = cubic_milimeters_ICV , x = volumetry, fill = Racial_identity)) +
+geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .7, y = 0), alpha = .8) + geom_boxplot(aes(fill=Racial_identity),position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.2, alpha =0.4, show.legend = FALSE) + stat_summary(aes(fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .8, alpha = .8, show.legend = FALSE) + 
+  coord_cartesian() +
+  scale_fill_discrete(labels = c("Whites", "African Americans")) +
+theme_light(base_size = 12, base_family = "Arial") + theme(legend.position = "top",axis.text.x = element_text(face = "bold"))  +
+xlab("") + ylab(~~ mm^'3'/ ICV) + labs(fill = "") + labs(col = "")+ geom_signif(
+    y_position = c(0.0003)
+    ,xmin = c(0.85)
+    , xmax = c(1.1)
+    ,annotation = c("*"), tip_length = 0
+  )
+
+optic_chiasm_paired_plot 
+
+```
+
+
+### Brain Stem (p < .05)
+
+```{r}
+data_connectomehcp_filtered_paired_volumetry_brain_stem <- data_connectomehcp_filtered_paired_volumetry %>%  group_by(Racial_identity) %>% dplyr::select(c(1,24))%>% dplyr::rename(
+    "Brain Stem"= BrainStem_Vol) %>% gather(key = "volumetry", value = "cubic_milimeters_ICV", -Racial_identity)
+
+
+brain_stem_paired_plot <- ggplot(data = data_connectomehcp_filtered_paired_volumetry_brain_stem , aes(y = cubic_milimeters_ICV , x = volumetry, fill = Racial_identity)) + geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .7, y = 0), alpha = .8) + geom_boxplot(aes(fill=Racial_identity),position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.2, alpha =0.4, show.legend = FALSE) + stat_summary(aes(fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .8, alpha = .8, show.legend = FALSE) + 
+  coord_cartesian() +
+  scale_fill_discrete(labels = c("Whites", "African Americans")) +
+theme_light(base_size = 12, base_family = "Arial") + theme(legend.position = "top",axis.text.x = element_text(face = "bold")) + 
+   xlab("") + 
+  ylab(~~ mm^'3'/ ICV) + labs(fill = "") + labs(col = "")+ geom_signif(
+    y_position = c(0.026)
+    ,xmin = c(0.85)
+    , xmax = c(1.1)
+    ,annotation = c("*"), tip_length = 0
+  )
+
+brain_stem_paired_plot
+```
+
+### Proper thalamus (p < .05)
+
+
+```{r}
+data_connectomehcp_filtered_paired_volumetry_proper_thalamus <- data_connectomehcp_filtered_paired_volumetry %>%  group_by(Racial_identity) %>% dplyr::select(c(1,18,36))%>% dplyr::rename(
+    "Left"= L_ThalamusProper_Vol,"Right"= R_ThalamusProper_Vol) %>% gather(key = "volumetry", value = "cubic_milimeters_ICV", -Racial_identity)
+
+
+proper_thalamus_paired_plot <- ggplot(data = data_connectomehcp_filtered_paired_volumetry_proper_thalamus , aes(y = cubic_milimeters_ICV , x = volumetry, fill = Racial_identity)) +
+geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .6, y = 0), alpha = .8) +
+geom_boxplot(aes(fill=Racial_identity),position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.3, alpha =0.4, show.legend = FALSE) + geom_signif(
+    y_position = c(0.0090)
+    ,xmin = c(1.85)
+    , xmax = c(2.1)
+    ,annotation = c("*"), tip_length = 0
+  )+ stat_summary(aes(fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .5, alpha = .8, show.legend = FALSE) + 
+  coord_cartesian() +
+  scale_fill_discrete(labels = c("Whites", "African Americans")) +
+theme_light(base_size = 12, base_family = "Arial") +
+ xlab("") + ylab(~~ mm^'3'/ ICV) + labs(fill = "") + labs(col = "") + theme(legend.position = "top",axis.text.x = element_text(face = "bold")) 
+
+proper_thalamus_paired_plot 
+```
+
+### Corpus callosum (p < .05)
+
+
+```{r}
+data_connectomehcp_filtered_paired_volumetry_corpus_callosum <- data_connectomehcp_filtered_paired_volumetry %>%  group_by(Racial_identity) %>% dplyr::select(c(1,48:52))%>% dplyr::rename(
+    Posterior= CC_Posterior_Vol,
+    MidPosterior= CC_MidPosterior_Vol,
+    Central = CC_Central_Vol,
+    MidAnterior = CC_MidAnterior_Vol,
+    Anterior = CC_Anterior_Vol) %>% gather(key = "volumetry", value = "cubic_milimeters_ICV", -Racial_identity)
+
+
+corpus_callosum_paired_plot <- ggplot(data = data_connectomehcp_filtered_paired_volumetry_corpus_callosum, aes(y = cubic_milimeters_ICV , x = volumetry)) +
+geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .6, y = 0), alpha = .8) + geom_boxplot(aes(fill=Racial_identity), position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.3, alpha =0.4, show.legend = FALSE) + geom_signif(
+    y_position = c(0.00090,0.00100)
+    ,xmin = c(0.85,4.85)
+    , xmax = c(1.1,5.1)
+    ,annotation = c("*", "*"), tip_length = 0) + stat_summary(aes(fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .5, alpha = .8, show.legend = FALSE) + 
+  coord_cartesian(ylim=c(0,0.001)) +
+scale_fill_discrete(labels = c("Whites", "African Americans")) +
+theme_light(base_size = 12, base_family = "Arial") +
+  xlab("") + ylab(~~ mm^'3'/ ICV) + labs(fill = "") + labs(col = "")  + theme(legend.position = "top",axis.text.x = element_text(face = "bold"))
+
+corpus_callosum_paired_plot
+
+```
+
+
+# 6. Brain cortical thickness analysis of paired sample t-test
+
+```{r}
+## Selection of brain cortical thickness and Racial identity variables
+
+
+data_connectomehcp_filtered_paired_cortical_thickness <- data_connectomehcp_filtered_paired %>% select(c(2,6:73)) %>% dplyr::rename(
+    L_Bankssts_Thck = FS_L_Bankssts_Thck,
+    L_Caudalanteriorcingulate_Thck = FS_L_Caudalanteriorcingulate_Thck,
+    L_Caudalmiddlefrontal_Thck = FS_L_Caudalmiddlefrontal_Thck,
+    L_Cuneus_Thck = FS_L_Cuneus_Thck,
+    L_Entorhinal_Thck = FS_L_Entorhinal_Thck,
+    L_Fusiform_Thck = FS_L_Fusiform_Thck, 
+    L_Inferiorparietal_Thck = FS_L_Inferiorparietal_Thck,
+    L_Inferiortemporal_Thck = FS_L_Inferiortemporal_Thck,
+    L_Isthmuscingulate_Thck = FS_L_Isthmuscingulate_Thck,
+    L_Lateraloccipital_Thck = FS_L_Lateraloccipital_Thck,
+    L_Lateralorbitofrontal_Thck = FS_L_Lateralorbitofrontal_Thck,
+    L_Lingual_Thck  = FS_L_Lingual_Thck,
+    L_Medialorbitofrontal_Thck = FS_L_Medialorbitofrontal_Thck,
+    L_Middletemporal_Thck = FS_L_Middletemporal_Thck,
+    L_Parahippocampal_Thck = FS_L_Parahippocampal_Thck,
+    L_Paracentral_Thck = FS_L_Paracentral_Thck,
+    L_Parsopercularis_Thck = FS_L_Parsopercularis_Thck,
+    L_Parsorbitalis_Thck = FS_L_Parsorbitalis_Thck,
+    L_Parstriangularis_Thck = FS_L_Parstriangularis_Thck,
+    L_Pericalcarine_Thck = FS_L_Pericalcarine_Thck,
+    L_Postcentral_Thck = FS_L_Postcentral_Thck,
+    L_Posteriorcingulate_Thck = FS_L_Posteriorcingulate_Thck,
+    L_Precentral_Thck = FS_L_Precentral_Thck,
+    L_Precuneus_Thck = FS_L_Precuneus_Thck,
+    L_Rostralanteriorcingulate_Thck = FS_L_Rostralanteriorcingulate_Thck,
+    L_Rostralmiddlefrontal_Thck = FS_L_Rostralmiddlefrontal_Thck,
+    L_Superiorfrontal_Thck = FS_L_Superiorfrontal_Thck,
+    L_Superiorparietal_Thck = FS_L_Superiorparietal_Thck,
+    L_Superiortemporal_Thck = FS_L_Superiortemporal_Thck,
+    L_Supramarginal_Thck = FS_L_Supramarginal_Thck,
+    L_Frontalpole_Thck = FS_L_Frontalpole_Thck,
+    L_Temporalpole_Thck = FS_L_Temporalpole_Thck,
+    L_Transversetemporal_Thck = FS_L_Transversetemporal_Thck,
+    L_Insula_Thck = FS_L_Insula_Thck,
+    R_Bankssts_Thck = FS_R_Bankssts_Thck,
+    R_Caudalanteriorcingulate_Thck = FS_R_Caudalanteriorcingulate_Thck,
+    R_Caudalmiddlefrontal_Thck = FS_R_Caudalmiddlefrontal_Thck,
+    R_Cuneus_Thck = FS_R_Cuneus_Thck,
+    R_Entorhinal_Thck = FS_R_Entorhinal_Thck,
+    R_Fusiform_Thck = FS_R_Fusiform_Thck,
+    R_Inferiorparietal_Thck = FS_R_Inferiorparietal_Thck,
+    R_Inferiortemporal_Thck = FS_R_Inferiortemporal_Thck,
+    R_Isthmuscingulate_Thck = FS_R_Isthmuscingulate_Thck,
+    R_Lateraloccipital_Thck = FS_R_Lateraloccipital_Thck,
+    R_Lateralorbitofrontal_Thck = FS_R_Lateralorbitofrontal_Thck,
+    R_Lingual_Thck = FS_R_Lingual_Thck,
+    R_Medialorbitofrontal_Thck = FS_R_Medialorbitofrontal_Thck,
+    R_Middletemporal_Thck= FS_R_Middletemporal_Thck,
+    R_Parahippocampal_Thck = FS_R_Parahippocampal_Thck,
+    R_Paracentral_Thck = FS_R_Paracentral_Thck,
+    R_Parsopercularis_Thck= FS_R_Parsopercularis_Thck,
+    R_Parsorbitalis_Thck = FS_R_Parsorbitalis_Thck,
+    R_Parstriangularis_Thck = FS_R_Parstriangularis_Thck,
+    R_Pericalcarine_Thck = FS_R_Pericalcarine_Thck,
+    R_Postcentral_Thck = FS_R_Postcentral_Thck,
+    R_Posteriorcingulate_Thck = FS_R_Posteriorcingulate_Thck,
+    R_Precentral_Thck = FS_R_Precentral_Thck,
+    R_Precuneus_Thck = FS_R_Precuneus_Thck,
+    R_Rostralanteriorcingulate_Thck = FS_R_Rostralanteriorcingulate_Thck,
+    R_Rostralmiddlefrontal_Thck = FS_R_Rostralmiddlefrontal_Thck,
+    R_Superiorfrontal_Thck = FS_R_Superiorfrontal_Thck,
+    R_Superiorparietal_Thck = FS_R_Superiorparietal_Thck,
+    R_Superiortemporal_Thck = FS_R_Superiortemporal_Thck,
+    R_Supramarginal_Thck = FS_R_Supramarginal_Thck,
+    R_Frontalpole_Thck = FS_R_Frontalpole_Thck,
+    R_Temporalpole_Thck = FS_R_Temporalpole_Thck,                  
+    R_Transversetemporal_Thck = FS_R_Transversetemporal_Thck,
+    R_Insula_Thck = FS_R_Insula_Thck )
+
+
+## t-test analysis with homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_cortical_thickness_t_test  <- lapply(data_connectomehcp_filtered_paired_cortical_thickness[-c(1,12,27,50,61,69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = TRUE))
+
+data_connectomehcp_filtered_paired_cortical_thickness_t_test
+
+```
+
+```{r}
+## Welch t-test analysis with non-homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_cortical_thickness_welcht_test  <- lapply(data_connectomehcp_filtered_paired_cortical_thickness[c(12,27,50,61,69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = FALSE))
+
+data_connectomehcp_filtered_paired_cortical_thickness_welcht_test
+```
+
+
+##  Multiple comparisons correction Holm-Bonferroni method
+
+```{r echo=TRUE}
+
+# p-values t-test analysis with homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_cortical_thickness_t_test  <- sapply(data_connectomehcp_filtered_paired_cortical_thickness[-c(1,12,27,50,61,69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = TRUE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_cortical_thickness_t_test <- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_t_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_thickness_t_test) %>% dplyr::select(1)
+
+
+
+# p-values Welch t-test analysis with non-homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test <- sapply(data_connectomehcp_filtered_paired_cortical_thickness[c(12,27,50,61,69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = FALSE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test<- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test) %>% dplyr::select(1)
+
+
+##  Merge of p-values dataframes for multiple comparison analysis
+
+holm_comparisons_data_connectomehcp_filtered_paired_cortical_thickness <-rbind(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_t_test,pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test)
+
+## Execution of Holm-Bonferroni multiple comparison analysis 
+
+holm_comparisons_data_connectomehcp_filtered_paired_cortical_thickness$Holm =p.adjust(holm_comparisons_data_connectomehcp_filtered_paired_cortical_thickness$pvalue,method ="holm") 
+
+```
+
+```{r echo=FALSE}
+knitr::kable(holm_comparisons_data_connectomehcp_filtered_paired_cortical_thickness, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
+```
+
+### Graphs of brain cortical thickness with statistical significance after multiple comparisons analysis
+
+### Left Cuneus Cortex (p < .005)
+
+```{r}
+data_connectomehcp_filtered_paired_cortical_thickness_cuneus_cortex <- data_connectomehcp_filtered_paired_cortical_thickness%>%  group_by(Racial_identity) %>% dplyr::select(c(1,5,39))%>% dplyr::rename(
+    "Left"= L_Cuneus_Thck,
+    "Right"= R_Cuneus_Thck) %>% gather(key = "thickness", value = "milimeters", -Racial_identity)
+
+
+cuneus_cortex_paired_plot <- ggplot(data = data_connectomehcp_filtered_paired_cortical_thickness_cuneus_cortex, aes(y = milimeters , x = thickness, fill = Racial_identity)) +
+geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .7, y = 0), alpha = .8) +geom_boxplot(aes(fill=Racial_identity),position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.2, alpha =0.4, show.legend = FALSE) + stat_summary(aes(fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .8, alpha = .8, show.legend = FALSE) + 
+  coord_cartesian() +
+  scale_fill_discrete(labels = c("Whites", "African Americans")) +
+theme_light(base_size = 12, base_family = "Arial") + theme(legend.position = "top")  +
+  xlab("") + ylab("Thickness (mm)") + labs(fill = "") + labs(col = "")+   geom_signif(
+    y_position = 2.50
+    ,xmin = 0.85
+    , xmax = 1.1
+    ,annotation = "**", tip_length = 0
+  )
+
+cuneus_cortex_paired_plot
+
+```
+
+# 7. Brain cortical surface area analysis of paired sample t-test
+
+```{r}
+## Selection of brain cortical thickness and Racial identity variables
+
+
+data_connectomehcp_filtered_paired_cortical_surface <- data_connectomehcp_filtered_paired %>% select(c(2,74:141)) %>%  dplyr::rename(
+     L_Bankssts_Area = FS_L_Bankssts_Area,
+    L_Caudalanteriorcingulate_Area = FS_L_Caudalanteriorcingulate_Area,
+    L_Caudalmiddlefrontal_Area = FS_L_Caudalmiddlefrontal_Area,
+    L_Cuneus_Area = FS_L_Cuneus_Area,
+    L_Entorhinal_Area = FS_L_Entorhinal_Area,
+    L_Fusiform_Area = FS_L_Fusiform_Area, 
+    L_Inferiorparietal_Area = FS_L_Inferiorparietal_Area, 
+    L_Inferiortemporal_Area = FS_L_Inferiortemporal_Area, 
+    L_Isthmuscingulate_Area = FS_L_Isthmuscingulate_Area,
+    L_Lateraloccipital_Area = FS_L_Lateraloccipital_Area,
+    L_Lateralorbitofrontal_Area = FS_L_Lateralorbitofrontal_Area,
+    L_Lingual_Area = FS_L_Lingual_Area,
+    L_Medialorbitofrontal_Area = FS_L_Medialorbitofrontal_Area,
+    L_Middletemporal_Area = FS_L_Middletemporal_Area,
+    L_Parahippocampal_Area = FS_L_Parahippocampal_Area,
+    L_Paracentral_Area = FS_L_Paracentral_Area,
+    L_Parsopercularis_Area = FS_L_Parsopercularis_Area,
+    L_Parsorbitalis_Area = FS_L_Parsorbitalis_Area,
+    L_Parstriangularis_Area = FS_L_Parstriangularis_Area,
+    L_Pericalcarine_Area = FS_L_Pericalcarine_Area,
+    L_Postcentral_Area = FS_L_Postcentral_Area,
+    L_Posteriorcingulate_Area = FS_L_Posteriorcingulate_Area,
+    L_Precentral_Area = FS_L_Precentral_Area,
+    L_Precuneus_Area = FS_L_Precuneus_Area,
+    L_Rostralanteriorcingulate_Area = FS_L_Rostralanteriorcingulate_Area,
+    L_Rostralmiddlefrontal_Area = FS_L_Rostralmiddlefrontal_Area,
+    L_Superiorfrontal_Area = FS_L_Superiorfrontal_Area,
+    L_Superiorparietal_Area = FS_L_Superiorparietal_Area,
+    L_Superiortemporal_Area = FS_L_Superiortemporal_Area,
+    L_Supramarginal_Area = FS_L_Supramarginal_Area,
+    L_Frontalpole_Area = FS_L_Frontalpole_Area,
+    L_Temporalpole_Area = FS_L_Temporalpole_Area,
+    L_Transversetemporal_Area = FS_L_Transversetemporal_Area,
+    L_Insula_Area = FS_L_Insula_Area,
+    R_Bankssts_Area = FS_R_Bankssts_Area,
+    R_Caudalanteriorcingulate_Area = FS_R_Caudalanteriorcingulate_Area,
+    R_Caudalmiddlefrontal_Area = FS_R_Caudalmiddlefrontal_Area,
+    R_Cuneus_Area = FS_R_Cuneus_Area,
+    R_Entorhinal_Area = FS_R_Entorhinal_Area,
+    R_Fusiform_Area= FS_R_Fusiform_Area,
+    R_Inferiorparietal_Area = FS_R_Inferiorparietal_Area,
+    R_Inferiortemporal_Area = FS_R_Inferiortemporal_Area,
+    R_Isthmuscingulate_Area = FS_R_Isthmuscingulate_Area,
+    R_Lateraloccipital_Area = FS_R_Lateraloccipital_Area,
+    R_Lateralorbitofrontal_Area = FS_R_Lateralorbitofrontal_Area,
+    R_Lingual_Area = FS_R_Lingual_Area,
+    R_Medialorbitofrontal_Area = FS_R_Medialorbitofrontal_Area,
+    R_Middletemporal_Area = FS_R_Middletemporal_Area,
+    R_Parahippocampal_Area = FS_R_Parahippocampal_Area,
+    R_Paracentral_Area = FS_R_Paracentral_Area,
+    R_Parsopercularis_Area = FS_R_Parsopercularis_Area,
+    R_Parsorbitalis_Area = FS_R_Parsorbitalis_Area,
+    R_Parstriangularis_Area = FS_R_Parstriangularis_Area,
+    R_Pericalcarine_Area = FS_R_Pericalcarine_Area,
+    R_Postcentral_Area = FS_R_Postcentral_Area,
+    R_Posteriorcingulate_Area = FS_R_Posteriorcingulate_Area,            
+    R_FS_R_Precentral_Area = FS_R_Precuneus_Area,
+    R_Rostralanteriorcingulate_Area = FS_R_Rostralanteriorcingulate_Area,
+    R_Rostralmiddlefrontal_Area = FS_R_Rostralmiddlefrontal_Area,
+    R_Superiorfrontal_Area = FS_R_Superiorfrontal_Area,
+    R_Superiorparietal_Area = FS_R_Superiorparietal_Area,
+    R_Superiortemporal_Area = FS_R_Superiortemporal_Area, 
+    R_Supramarginal_Area = FS_R_Supramarginal_Area,
+    R_Frontalpole_Area = FS_R_Frontalpole_Area,
+    R_Temporalpole_Area = FS_R_Temporalpole_Area,
+    R_Transversetemporal_Area = FS_R_Transversetemporal_Area,            
+    R_Insula_Area = FS_R_Insula_Area)
+
+
+## t-test analysis with homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_cortical_surface_t_test  <- lapply(data_connectomehcp_filtered_paired_cortical_surface[-c(1,57,63)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = TRUE))
+
+data_connectomehcp_filtered_paired_cortical_surface_t_test
+
+```
+
+```{r}
+## Welch t-test analysis with non-homogeneous of variance assumption
+
+data_connectomehcp_filtered_paired_cortical_surface_welcht_test  <- lapply(data_connectomehcp_filtered_paired_cortical_surface[c(57,63)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = FALSE))
+
+data_connectomehcp_filtered_paired_cortical_surface_welcht_test
+```
+
+
+##  Multiple comparisons correction Holm-Bonferroni method
+
+```{r echo=TRUE}
+
+# p-values t-test analysis with homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_cortical_surface_t_test  <- sapply(data_connectomehcp_filtered_paired_cortical_surface[-c(1,57,63)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = TRUE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_cortical_surface_t_test <- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_surface_t_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_surface_t_test) %>% dplyr::select(1)
+
+
+
+# p-values Welch t-test analysis with non-homogeneous of variance assumption
+
+pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test <- sapply(data_connectomehcp_filtered_paired_cortical_surface[c(57,63)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = FALSE)$p.value)
+
+pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test<- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test) %>% dplyr::select(1)
+
+
+##  Merge of p-values dataframes for multiple comparison analysis
+
+holm_comparisons_data_connectomehcp_filtered_paired_cortical_surface <-rbind(pvalues_data_connectomehcp_filtered_paired_cortical_surface_t_test,pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test)
+
+## Execution of Holm-Bonferroni multiple comparison analysis 
+
+holm_comparisons_data_connectomehcp_filtered_paired_cortical_surface$Holm =p.adjust(holm_comparisons_data_connectomehcp_filtered_paired_cortical_surface$pvalue,method ="holm") 
+
+```
+
+```{r echo=FALSE}
+knitr::kable(holm_comparisons_data_connectomehcp_filtered_paired_cortical_surface, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
+```
+
