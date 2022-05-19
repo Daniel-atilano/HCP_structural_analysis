@@ -2,7 +2,7 @@
 
  HCP_racial_identity_analysis.Rmd: Pipelines of the brain structural analysis by racial identity of HCP restricted database 
  
- Pipeline can be consulted at R-pubs website:  
+ Pipeline can be consulted at R-pubs website: https://rpubs.com/Daniel_atilano/898523
  
 
  For more information related to the database refer to: 
