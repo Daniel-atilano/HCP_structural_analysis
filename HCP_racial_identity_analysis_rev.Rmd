@@ -1,8 +1,10 @@
 ---
-title: "HCP_racial_identity_analysis_rev"
+title: "HCP racial identity structural analysis"
 author: "daniel atilano"
 date: "30/4/2022"
-output: github_document
+output:
+  rmdformats::material:
+    highlight: kate
 ---
 ```{r setup2, include=FALSE}
 library(readr)
@@ -16,6 +18,7 @@ library(lmPerm)
 library(gghalves)
 library(ggsignif)
 library(car)
+library(tibble)
 ```
 
 
@@ -40,7 +43,9 @@ library(car)
         8. ASR DSM- Avoidant personality problems (Exclusion of T Scores > 65)
         9. ASR DSM Attention deficit and hyperactivity problems (Exclusion of T Scores > 65)
         10. ASR DSM Antisocial personality problems (Exclusion of T Scores > 65)
-### SSAGA
+        
+### SSAGA (Semi-Structured Assessment for the Genetics of Alcoholism)
+
         11. Presence of panic disorders at some time in life (Exclusion of responses:1=Yes)
         12. Presence of agoraphobia disorder at some point in life (Exclusion of responses:5=Yes)
 
@@ -165,7 +170,6 @@ data_connectome_filtered_race_factor$SSAGA_Income <- factor(data_connectome_filt
 ```{r echo=FALSE}
 data_connectome_filtered_race_factor %>%      select(Age_in_Yrs,Racial_identity,Gender,SSAGA_Educ,SSAGA_Income) %>% tbl_summary(by = Racial_identity, label = list(Age_in_Yrs ~ "Age (y)", Gender ~ "Sex", SSAGA_Educ ~ "Education(y)", SSAGA_Income ~ "Economic Income "), type = list(SSAGA_Educ ~ 'continuous'), statistic = c("Age_in_Yrs", "SSAGA_Educ") ~ "{mean} ({sd})", digits = all_continuous() ~ 2) %>% add_p(pvalue_fun = ~style_pvalue(.x, digits = 3), list(all_continuous() ~ "t.test")) %>%  add_n() %>%     modify_caption("**Table 1. Descriptives for racial identity**") %>% modify_header(label ~ "")  %>%  bold_labels() %>% modify_spanning_header(all_stat_cols() ~ "**Racial Identity**") %>% as_gt()%>% opt_align_table_header(align = "left") 
 
-##MISSING 3 VALUES FOR WHITES
 
 ```
 
@@ -664,6 +668,7 @@ knitr::kable(pvalues_permutation_multiple_comparisons_volumetry, format = "simpl
 
 pvalues_permutation_multiple_comparisons_volumetry %>% filter(Holm < 0.05)
 ```
+
 
 
 ### Graphs of brain regions volumes with statistical significance after multiple comparisons analysis
@@ -1249,11 +1254,10 @@ pvalues_permutation_multiple_comparisons_cortical_thickness %>% filter(Holm < 0.
 
 ```
 
-
 ### Graphs of brain cortical thickness with statistical significance after multiple comparisons analysis
 
 
-```{r echo=FALSE, fig.width=10}
+```{r echo=FALSE, fig.width=15,fig.height=15}
 data_cortical_thickness_plotted <- permutational_ancova_cortical_thickness %>% na.omit() %>% dplyr::select(c(2,11,40,44,46,43,53,64,60,69,72,9,15,49,17,51,25,26))  %>% dplyr::rename(
     "Right Banks STS***"= R_Bankssts_Thck,
     "Right Entorhinal***"= R_Entorhinal_Thck,
@@ -1296,6 +1300,7 @@ theme_light(base_size = 12, base_family = "Arial") +
 plot_cortical_thickness_permutation_facet
 
 ```
+
 
 # 3. Brain surface brain area ANCOVA permutational analysis
 
@@ -1829,7 +1834,7 @@ pvalues_permutation_multiple_comparisons_surface_area %>%  filter(Holm <0.05)
 ### Graphs of brain surface area with statistical significance after multiple comparisons analysis
 
 
-```{r echo=FALSE, fig.width=15, fig.height=10}
+```{r echo=FALSE, fig.width=15, fig.height=15}
 data_surface_area_plotted <- permutational_ancova_surface_area %>% na.omit() %>% 
 dplyr::select(c(2,10,45,13,15,49,17,63,57,32,33,67,42,16,22,56,70,66))  %>% dplyr::rename(
     "Left Entorhinal***"= L_Entorhinal_Area,
@@ -1869,592 +1874,3 @@ plot_wrap_all_regions_surface_area
 
 ```
 
-# 4. HCP sample paired 
-
-### The sample was selected aiming to pair Whites and African American identities by age, education, economic income and gender. 
-
-```{r include=FALSE}
-data_connectomehcp_filtered_paired <- read_csv("data_connectomehcp_filtered_paired.csv")
-```
-
-```{r}
-### Factorized GENDER, RACIAL IDENTITY, and ECONOMIC INCOME variables
-
-data_connectomehcp_filtered_paired$Racial_identity <- factor(data_connectomehcp_filtered_paired$Racial_identity, levels = c("White","Black or African Am."),labels = c("0","1"))
-
-data_connectomehcp_filtered_paired$Gender <-factor(data_connectomehcp_filtered_paired$Gender, levels = c("M","F"),labels = c("0","1"))
-
-data_connectomehcp_filtered_paired$Gender <-factor(data_connectomehcp_filtered_paired$Gender, levels = c("0","1"),labels = c("M","F"))
-
-data_connectomehcp_filtered_paired$Racial_identity <- factor(data_connectomehcp_filtered_paired$Racial_identity, levels = c("0","1"),labels = c("White","Black or African Am."))
-
-
-```
-
-```{r}
-data_connectomehcp_filtered_paired_table_descriptives <- data_connectomehcp_filtered_paired %>% select(Age_in_Yrs,Racial_identity,SSAGA_Educ,Gender,SSAGA_Income) %>% tbl_summary(by = Racial_identity, label = list( Age_in_Yrs ~ "Age (y)", SSAGA_Educ ~ "Education(y)", Gender ~ "Sex", SSAGA_Income ~ "Economic Income "), type = list(SSAGA_Educ ~ 'continuous'), statistic = c("Age_in_Yrs", "SSAGA_Educ") ~ "{mean} ({sd})", digits = all_continuous() ~ 2) %>% add_p(pvalue_fun = ~style_pvalue(.x, digits = 3), list(all_continuous() ~ "t.test")) %>%  add_n() %>%     modify_caption("**Table 1. Descriptives for racial identity**") %>% modify_header(label ~ "")  %>%  bold_labels() %>% modify_spanning_header(all_stat_cols() ~ "**Racial Identity**") %>% as_gt()%>% opt_align_table_header(align = "left") 
-
-data_connectomehcp_filtered_paired_table_descriptives
-
-```
-
-# 5. Brain volume analysis of paired sample t-test
-
-```{r}
-## Selection of brain volumetric and Racial identity variables
-
-
-data_connectomehcp_filtered_paired_volumetry <- data_connectomehcp_filtered_paired %>% select(c(2,142:153,160:198))
-
-
-## Welch t-test analysis with non-homogeneous of variance assumption
-
-data_connectomehcp_filtered_paired_volumetry_welcht_test  <- lapply(data_connectomehcp_filtered_paired_volumetry[c(2:52)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = FALSE))
-
-data_connectomehcp_filtered_paired_volumetry_welcht_test 
-
-```
-
-
-
-##  Multiple comparisons correction Holm-Bonferroni method
-
-```{r echo=TRUE}
-
-
-# p-values Welch t-test analysis with non-homogeneous of variance assumption
-
-pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test <- sapply(data_connectomehcp_filtered_paired_volumetry[c(2:52)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_volumetry$Racial_identity, var.equal = FALSE)$p.value)
-
-pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test <- as.data.frame(pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test) %>% dplyr::select(1)
-
-
-## Execution of Holm-Bonferroni multiple comparison analysis 
-
-pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test$Holm =p.adjust(pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test$pvalue,method ="holm") 
-
-```
-
-
-```{r echo=FALSE}
-knitr::kable(pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
-
-
-pvalues_data_connectomehcp_filtered_paired_volumetry_welch_t_test %>% filter (Holm < 0.05)
-```
-
-### Table statistical summary of brain volumetry 
-
-```{r}
-data_connectomehcp_filtered_paired_volumetry %>% 
-dplyr::rename(
-    "Brain Seg"= BrainSeg_Vol,                         
-    "Brain Seg No Vent" = BrainSeg_Vol_No_Vent,                  
-    "Brain Seg No Vent Surf" = BrainSeg_Vol_No_Vent_Surf,
-    "Left Cortical GM" = Lcort_GM_Vol,                         
-    "Right Cortical GM" =Rcort_GM_Vol,
-    "Cortical GM" = TotCort_GM_Vol, 
-    "Subcortical GM" = SubCort_GM_Vol,
-    "Total GM" = Total_GM_Vol,
-    "SupraTentorial" = SupraTentorial_Vol,
-    "Left WM" = L_WM_Vol,
-    "Right WM" = R_WM_Vol,
-    "Total WM" = Tot_WM_Vol,
-    "Left Lat Ventricle" = L_LatVent_Vol,
-    "Left Inf Lat Ventricle" = L_InfLatVent_Vol,
-    "Left Cerebellum WM" = L_Cerebellum_WM_Vol,
-    "Left Cerebellum Cortex" = L_Cerebellum_Cort_Vol,
-    "Left Thalamus Proper" = L_ThalamusProper_Vol,
-    "Left Caudate" = L_Caudate_Vol,
-    "Left Putamen" = L_Putamen_Vol,
-    "Left Pallidum" = L_Pallidum_Vol,
-    "3rd Ventricle" = `3rdVent_Vol`,
-    "4th Ventricle" = `4thVent_Vol`,
-    "Brain Stem" = BrainStem_Vol,
-    "Left Hippocampus" = L_Hippo_Vol,
-    "Left Amygdala"= L_Amygdala_Vol,
-    "CSF" = CSF_Vol,
-    "Left Accumbens Area" = L_AccumbensArea_Vol,
-    "Left Vent Diencephalon" = L_VentDC_Vol,
-    "Left Vessel" = L_Vessel_Vol,
-    "Left Choroid Plexus" = L_ChoroidPlexus_Vol,
-    "Right Lat Ventricle"= R_LatVent_Vol,
-    "Right Inf Lat Ventricle"= R_InfLatVent_Vol,
-    "Right Cerebellum WM"=R_Cerebellum_WM_Vol,
-    "Right Cerebellum Cortex" = R_Cerebellum_Cort_Vol,
-    "Right Thalamus Proper" = R_ThalamusProper_Vol,
-    "Right Caudate" = R_Caudate_Vol,
-    "Right Putamen" = R_Putamen_Vol,
-    "Right Pallidum" = R_Pallidum_Vol,
-    "Right Hippocampus" = R_Hippo_Vol,
-    "Right Amygdala"= R_Amygdala_Vol,
-    "Right Accumbens Area" = R_AccumbensArea_Vol,
-    "Right Vent Diencephalon"= R_VentDC_Vol,
-    "Right Vessel" = R_Vessel_Vol,
-    "Right Choroid Plexus"= R_ChoroidPlexus_Vol,
-    "5th Ventricle" = `5thVent_Vol`,
-    "Optic Chiasm" = OpticChiasm_Vol,
-    "CC Posterior"= CC_Posterior_Vol,
-    "CC MidPosterior"= CC_MidPosterior_Vol,
-    "CC Central" = CC_Central_Vol,
-    "CC MidAnterior" = CC_MidAnterior_Vol,
-    "CC Anterior" = CC_Anterior_Vol)  %>%  tbl_summary(by = Racial_identity, statistic = list(all_continuous() ~ "{mean} ({sd})"), digits = all_continuous() ~ function(x) format(x, format = "e", digits = 4)) %>% add_difference() %>% add_q(method = "holm", pvalue_fun = function(x) style_pvalue(x, digits = 3)) %>%  as_gt()
-
-
-```
-
-
-
-### Graphs of brain volumetry with statistical significance after multiple comparisons analysis
-
-
-```{r}
-data_connectomehcp_filtered_paired_volumetry_wrap <- data_connectomehcp_filtered_paired_volumetry %>% dplyr::select(c(1,11,12,13,47,48,18,36))%>% dplyr::rename(
-    "Cortical WM*"=Tot_WM_Vol,
-    "Left Cortical WM*"= L_WM_Vol,
-    "Right Cortical WM*"= R_WM_Vol,
-    "Optic Chiasm***"=OpticChiasm_Vol,
-    "CC Posterior*"= CC_Posterior_Vol,
-    "Left Thalamus Proper*"= L_ThalamusProper_Vol,
-    "Right Thalamus Proper*"= R_ThalamusProper_Vol,
- ) %>% gather(key = "volumetry", value = "cubic_milimeters_ICV", -Racial_identity)
-
-
-plot_volumetry_paired_corrected_permutation_facet <- ggplot(data = data_connectomehcp_filtered_paired_volumetry_wrap, aes(y = cubic_milimeters_ICV , x = volumetry, fill = Racial_identity)) + 
-geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .6, y = 0), alpha = .8) +
- geom_boxplot(aes(y = cubic_milimeters_ICV , x = volumetry,fill=Racial_identity), position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.3, alpha =0.4, show.legend = FALSE) +  stat_summary(aes(y = cubic_milimeters_ICV , x = volumetry,fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .5, alpha = .8, show.legend = FALSE) + 
-  #coord_cartesian(ylim=c(0,0.001)) + 
-  facet_wrap(~volumetry, scales = "free") +
-#expand_limits(x = 6) +
-#guides(fill = TRUE) +
-#guides(color = TRUE) +
-#scale_color_manual(values=c("red", "blue")) +
-scale_fill_discrete(labels = c("Whites", "African Americans")) +
-#scale_color_brewer(palette = "Spectral") +
-#scale_fill_brewer(palette = "Spectral") +
-#coord_flip() +
-theme_light(base_size = 12, base_family = "Arial") +
-  #ggtitle("Volumetric results") 
-   xlab("") + ylab(~~ mm^'3'/ ICV) + labs(fill = "") + labs(col = "")  + theme(legend.position = "top",axis.text.x=element_blank(), strip.text.x = element_text(color = "black", face = "bold"))  #+ geom_signif(comparisons = list(c("White", "Black or African Am.")),tip_length=0,y_position = 9, textsize = 4)
-
-
-plot_volumetry_paired_corrected_permutation_facet
-
-
-
-```
-
-
-
-
-# 6. Brain cortical thickness analysis of paired sample t-test
-
-```{r}
-## Selection of brain cortical thickness and Racial identity variables
-
-
-data_connectomehcp_filtered_paired_cortical_thickness <- data_connectomehcp_filtered_paired %>% select(c(2,6:73)) %>% dplyr::rename(
-    L_Bankssts_Thck = FS_L_Bankssts_Thck,
-    L_Caudalanteriorcingulate_Thck = FS_L_Caudalanteriorcingulate_Thck,
-    L_Caudalmiddlefrontal_Thck = FS_L_Caudalmiddlefrontal_Thck,
-    L_Cuneus_Thck = FS_L_Cuneus_Thck,
-    L_Entorhinal_Thck = FS_L_Entorhinal_Thck,
-    L_Fusiform_Thck = FS_L_Fusiform_Thck, 
-    L_Inferiorparietal_Thck = FS_L_Inferiorparietal_Thck,
-    L_Inferiortemporal_Thck = FS_L_Inferiortemporal_Thck,
-    L_Isthmuscingulate_Thck = FS_L_Isthmuscingulate_Thck,
-    L_Lateraloccipital_Thck = FS_L_Lateraloccipital_Thck,
-    L_Lateralorbitofrontal_Thck = FS_L_Lateralorbitofrontal_Thck,
-    L_Lingual_Thck  = FS_L_Lingual_Thck,
-    L_Medialorbitofrontal_Thck = FS_L_Medialorbitofrontal_Thck,
-    L_Middletemporal_Thck = FS_L_Middletemporal_Thck,
-    L_Parahippocampal_Thck = FS_L_Parahippocampal_Thck,
-    L_Paracentral_Thck = FS_L_Paracentral_Thck,
-    L_Parsopercularis_Thck = FS_L_Parsopercularis_Thck,
-    L_Parsorbitalis_Thck = FS_L_Parsorbitalis_Thck,
-    L_Parstriangularis_Thck = FS_L_Parstriangularis_Thck,
-    L_Pericalcarine_Thck = FS_L_Pericalcarine_Thck,
-    L_Postcentral_Thck = FS_L_Postcentral_Thck,
-    L_Posteriorcingulate_Thck = FS_L_Posteriorcingulate_Thck,
-    L_Precentral_Thck = FS_L_Precentral_Thck,
-    L_Precuneus_Thck = FS_L_Precuneus_Thck,
-    L_Rostralanteriorcingulate_Thck = FS_L_Rostralanteriorcingulate_Thck,
-    L_Rostralmiddlefrontal_Thck = FS_L_Rostralmiddlefrontal_Thck,
-    L_Superiorfrontal_Thck = FS_L_Superiorfrontal_Thck,
-    L_Superiorparietal_Thck = FS_L_Superiorparietal_Thck,
-    L_Superiortemporal_Thck = FS_L_Superiortemporal_Thck,
-    L_Supramarginal_Thck = FS_L_Supramarginal_Thck,
-    L_Frontalpole_Thck = FS_L_Frontalpole_Thck,
-    L_Temporalpole_Thck = FS_L_Temporalpole_Thck,
-    L_Transversetemporal_Thck = FS_L_Transversetemporal_Thck,
-    L_Insula_Thck = FS_L_Insula_Thck,
-    R_Bankssts_Thck = FS_R_Bankssts_Thck,
-    R_Caudalanteriorcingulate_Thck = FS_R_Caudalanteriorcingulate_Thck,
-    R_Caudalmiddlefrontal_Thck = FS_R_Caudalmiddlefrontal_Thck,
-    R_Cuneus_Thck = FS_R_Cuneus_Thck,
-    R_Entorhinal_Thck = FS_R_Entorhinal_Thck,
-    R_Fusiform_Thck = FS_R_Fusiform_Thck,
-    R_Inferiorparietal_Thck = FS_R_Inferiorparietal_Thck,
-    R_Inferiortemporal_Thck = FS_R_Inferiortemporal_Thck,
-    R_Isthmuscingulate_Thck = FS_R_Isthmuscingulate_Thck,
-    R_Lateraloccipital_Thck = FS_R_Lateraloccipital_Thck,
-    R_Lateralorbitofrontal_Thck = FS_R_Lateralorbitofrontal_Thck,
-    R_Lingual_Thck = FS_R_Lingual_Thck,
-    R_Medialorbitofrontal_Thck = FS_R_Medialorbitofrontal_Thck,
-    R_Middletemporal_Thck= FS_R_Middletemporal_Thck,
-    R_Parahippocampal_Thck = FS_R_Parahippocampal_Thck,
-    R_Paracentral_Thck = FS_R_Paracentral_Thck,
-    R_Parsopercularis_Thck= FS_R_Parsopercularis_Thck,
-    R_Parsorbitalis_Thck = FS_R_Parsorbitalis_Thck,
-    R_Parstriangularis_Thck = FS_R_Parstriangularis_Thck,
-    R_Pericalcarine_Thck = FS_R_Pericalcarine_Thck,
-    R_Postcentral_Thck = FS_R_Postcentral_Thck,
-    R_Posteriorcingulate_Thck = FS_R_Posteriorcingulate_Thck,
-    R_Precentral_Thck = FS_R_Precentral_Thck,
-    R_Precuneus_Thck = FS_R_Precuneus_Thck,
-    R_Rostralanteriorcingulate_Thck = FS_R_Rostralanteriorcingulate_Thck,
-    R_Rostralmiddlefrontal_Thck = FS_R_Rostralmiddlefrontal_Thck,
-    R_Superiorfrontal_Thck = FS_R_Superiorfrontal_Thck,
-    R_Superiorparietal_Thck = FS_R_Superiorparietal_Thck,
-    R_Superiortemporal_Thck = FS_R_Superiortemporal_Thck,
-    R_Supramarginal_Thck = FS_R_Supramarginal_Thck,
-    R_Frontalpole_Thck = FS_R_Frontalpole_Thck,
-    R_Temporalpole_Thck = FS_R_Temporalpole_Thck,                  
-    R_Transversetemporal_Thck = FS_R_Transversetemporal_Thck,
-    R_Insula_Thck = FS_R_Insula_Thck )
-
-
-
-```
-
-```{r}
-## Welch t-test analysis with non-homogeneous of variance assumption
-
-data_connectomehcp_filtered_paired_cortical_thickness_welcht_test  <- lapply(data_connectomehcp_filtered_paired_cortical_thickness[c(2:69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = FALSE))
-
-data_connectomehcp_filtered_paired_cortical_thickness_welcht_test
-```
-
-
-##  Multiple comparisons correction Holm-Bonferroni method
-
-```{r echo=TRUE}
-
-
-# p-values Welch t-test analysis with non-homogeneous of variance assumption
-
-pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test <- sapply(data_connectomehcp_filtered_paired_cortical_thickness[c(2:69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_thickness$Racial_identity, var.equal = FALSE)$p.value)
-
-pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test<- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test) %>% dplyr::select(1)
-
-
-## Execution of Holm-Bonferroni multiple comparison analysis 
-
-pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test$Holm =p.adjust(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test$pvalue,method ="holm") 
-
-```
-
-```{r echo=FALSE}
-knitr::kable(pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
-
-pvalues_data_connectomehcp_filtered_paired_cortical_thickness_welcht_test %>% filter(Holm < 0.05)
-```
-
-### Table statistical summary of brain cortical thickness 
-
-```{r}
-data_connectomehcp_filtered_paired_cortical_thickness %>% 
-dplyr::rename(
-    "Left Banks STS" = L_Bankssts_Thck,
-    "Left Caudal Anterior Cingulate" = L_Caudalanteriorcingulate_Thck,
-    "Left Caudal Middle Frontal" = L_Caudalmiddlefrontal_Thck,
-    "Left Cuneus" = L_Cuneus_Thck,
-    "Left Entorhinal" = L_Entorhinal_Thck,
-    "Left Fusiform" = L_Fusiform_Thck, 
-    "Left Inferior Parietal" = L_Inferiorparietal_Thck,
-    "Left Inferior Temporal" = L_Inferiortemporal_Thck,
-    "Left Isthmuscingulate" = L_Isthmuscingulate_Thck,
-    "Left Lateral Occipital" = L_Lateraloccipital_Thck,
-    "Left Lateral Orbitofrontal" = L_Lateralorbitofrontal_Thck,
-    "Left Lingual"  = L_Lingual_Thck,
-    "Left Medialorbitofrontal" = L_Medialorbitofrontal_Thck,
-    "Left Middletemporal" = L_Middletemporal_Thck,
-    "Left Parahippocampal" = L_Parahippocampal_Thck,
-    "Left Paracentral" = L_Paracentral_Thck,
-    "Left Parsopercularis" = L_Parsopercularis_Thck,
-    "Left Parsorbitalis" = L_Parsorbitalis_Thck,
-    "Left Parstriangularis" = L_Parstriangularis_Thck,
-    "Left Pericalcarine" = L_Pericalcarine_Thck,
-    "Left Postcentral" = L_Postcentral_Thck,
-    "Left Posterior Cingulate" = L_Posteriorcingulate_Thck,
-    "Left Precentral" = L_Precentral_Thck,
-    "Left Precuneus" = L_Precuneus_Thck,
-    "Left Rostral anterior cingulate" = L_Rostralanteriorcingulate_Thck,
-    "Left Rostral middle frontal" = L_Rostralmiddlefrontal_Thck,
-    "Left Superior Frontal" = L_Superiorfrontal_Thck,
-    "Left Superior Parietal" = L_Superiorparietal_Thck,
-    "Left Superior Temporal" = L_Superiortemporal_Thck,
-    "Left Supramarginal" = L_Supramarginal_Thck,
-    "Left Frontal Pole" = L_Frontalpole_Thck,
-    "Left Temporal Pole" = L_Temporalpole_Thck,
-    "Left Transverse Temporal" = L_Transversetemporal_Thck,
-    "Left Insula" = L_Insula_Thck,
-    "Right Banks STS" = R_Bankssts_Thck,
-    "Right Caudal Anterior Cingulate"= R_Caudalanteriorcingulate_Thck,
-    "Right Caudal Middle Frontal" = R_Caudalmiddlefrontal_Thck,
-    "Right Cuneus" = R_Cuneus_Thck,
-    "Right Entorhinal" = R_Entorhinal_Thck,
-    "Right Fusiform" = R_Fusiform_Thck,
-    "Right Inferior Parietal" =R_Inferiorparietal_Thck,
-    "Right Inferior Temporal" = R_Inferiortemporal_Thck,
-    "Right Isthmuscingulate" = R_Isthmuscingulate_Thck,
-    "Right Lateral Occipital" = R_Lateraloccipital_Thck,
-    "Right Lateral Orbitofrontal" = R_Lateralorbitofrontal_Thck,
-    "Right Lingual" = R_Lingual_Thck,
-    "Right Medial Orbitofrontal" = R_Medialorbitofrontal_Thck,
-    "Right Middle Temporal"= R_Middletemporal_Thck,
-    "Right _Parahippocampal" = R_Parahippocampal_Thck,
-    "Right Paracentral" = R_Paracentral_Thck,
-    "Right Parsopercularis"= R_Parsopercularis_Thck,
-    "Right Parsorbitalis" = R_Parsorbitalis_Thck,
-    "Right Parstriangularis" = R_Parstriangularis_Thck,
-    "Right Pericalcarine" = R_Pericalcarine_Thck,
-    "Right Postcentral" = R_Postcentral_Thck,
-    "Right Posterior Cingulate" = R_Posteriorcingulate_Thck,
-    "Right Precentral" = R_Precentral_Thck,
-    "Right Precuneus" = R_Precuneus_Thck,
-    "Right Rostral Anterior Cingulate" = R_Rostralanteriorcingulate_Thck,
-    "Right Rostral Middle Frontal" = R_Rostralmiddlefrontal_Thck,
-    "Right Superior Frontal" = R_Superiorfrontal_Thck,
-    "Right Superior Parietal" = R_Superiorparietal_Thck,
-    "Right Superior Temporal" = R_Superiortemporal_Thck,
-    "Right Supramarginal" = R_Supramarginal_Thck,
-    "Right Frontal Pole" = R_Frontalpole_Thck,
-    "Right Temporal Pole" = R_Temporalpole_Thck,                  
-    "Right Transverse Temporal" = R_Transversetemporal_Thck,
-    "Right Insula" = R_Insula_Thck ) %>%  tbl_summary(by = Racial_identity, statistic = list(all_continuous() ~ "{mean} ({sd})"), digits = all_continuous() ~ function(x) format(x, format = "e", digits = 4)) %>% add_difference() %>% add_q(method = "holm", pvalue_fun = function(x) style_pvalue(x, digits = 3)) %>%  as_gt()
-```
-
-
-### Graphs of brain cortical thickness with statistical significance after multiple comparisons analysis
-
-
-
-```{r}
-
-data_paired_cortical_thickness_plotted <- data_connectomehcp_filtered_paired_cortical_thickness %>% na.omit()   %>% dplyr::select(c(1,40,68,45))  %>% dplyr::rename(
-    "Right Entorhinal*"= R_Entorhinal_Thck,
-    "Right Transverse Temporal*"= R_Transversetemporal_Thck,   
-    "Right Lateral Occipital*"= R_Lateraloccipital_Thck,
-) %>% gather(key = "thickness", value = "milimeters", -Racial_identity)
-
-
-
-plot_cortical_thickness_paired_permutation_facet <- ggplot(data = data_paired_cortical_thickness_plotted, aes(y = milimeters , x = thickness, fill = Racial_identity)) + 
-geom_half_violin((aes(fill = factor(Racial_identity))),position = position_nudge(x = .6, y = 0), alpha = .8) +
- geom_boxplot(aes(y = milimeters , x = thickness,fill=Racial_identity), position = position_dodge(.5), notch = TRUE,outlier.shape = NA, width= 0.3, alpha =0.4, show.legend = FALSE) +  stat_summary(aes(y = milimeters , x = thickness,fill=Racial_identity),fun.y="mean",position = position_dodge(.5), show.legend = FALSE) +  geom_point((aes(colour = factor(Racial_identity))), position = position_jitterdodge(dodge.width = 0.55), size = .5, alpha = .8, show.legend = FALSE) + 
-  #coord_cartesian(ylim=c(0,0.001)) + 
-  facet_wrap(~thickness, scales = "free") +
-#expand_limits(x = 6) +
-#guides(fill = TRUE) +
-#guides(color = TRUE) +
-#scale_color_manual(values=c("red", "blue")) +
-scale_fill_discrete(labels = c("Whites", "African Americans")) +
-#scale_color_brewer(palette = "Spectral") +
-#scale_fill_brewer(palette = "Spectral") +
-#coord_flip() +
-theme_light(base_size = 12, base_family = "Arial") +
-  #ggtitle("Cortical Thickness Results") +
-  xlab("") + ylab("Thickness (mm)") + labs(fill = "") + labs(col = "")  + theme(legend.position = "top",axis.text.x=element_blank(), strip.text.x = element_text(color = "black", face = "bold"))  #+ geom_signif(comparisons = list(c("White", "Black or African Am.")),tip_length=0,y_position = 9, textsize = 4)
-
-  plot_cortical_thickness_paired_permutation_facet
-```
-
-# 7. Brain cortical surface area analysis of paired sample t-test
-
-```{r}
-## Selection of brain cortical thickness and Racial identity variables
-
-
-data_connectomehcp_filtered_paired_cortical_surface <- data_connectomehcp_filtered_paired %>% select(c(2,74:141)) %>%  dplyr::rename(
-     L_Bankssts_Area = FS_L_Bankssts_Area,
-    L_Caudalanteriorcingulate_Area = FS_L_Caudalanteriorcingulate_Area,
-    L_Caudalmiddlefrontal_Area = FS_L_Caudalmiddlefrontal_Area,
-    L_Cuneus_Area = FS_L_Cuneus_Area,
-    L_Entorhinal_Area = FS_L_Entorhinal_Area,
-    L_Fusiform_Area = FS_L_Fusiform_Area, 
-    L_Inferiorparietal_Area = FS_L_Inferiorparietal_Area, 
-    L_Inferiortemporal_Area = FS_L_Inferiortemporal_Area, 
-    L_Isthmuscingulate_Area = FS_L_Isthmuscingulate_Area,
-    L_Lateraloccipital_Area = FS_L_Lateraloccipital_Area,
-    L_Lateralorbitofrontal_Area = FS_L_Lateralorbitofrontal_Area,
-    L_Lingual_Area = FS_L_Lingual_Area,
-    L_Medialorbitofrontal_Area = FS_L_Medialorbitofrontal_Area,
-    L_Middletemporal_Area = FS_L_Middletemporal_Area,
-    L_Parahippocampal_Area = FS_L_Parahippocampal_Area,
-    L_Paracentral_Area = FS_L_Paracentral_Area,
-    L_Parsopercularis_Area = FS_L_Parsopercularis_Area,
-    L_Parsorbitalis_Area = FS_L_Parsorbitalis_Area,
-    L_Parstriangularis_Area = FS_L_Parstriangularis_Area,
-    L_Pericalcarine_Area = FS_L_Pericalcarine_Area,
-    L_Postcentral_Area = FS_L_Postcentral_Area,
-    L_Posteriorcingulate_Area = FS_L_Posteriorcingulate_Area,
-    L_Precentral_Area = FS_L_Precentral_Area,
-    L_Precuneus_Area = FS_L_Precuneus_Area,
-    L_Rostralanteriorcingulate_Area = FS_L_Rostralanteriorcingulate_Area,
-    L_Rostralmiddlefrontal_Area = FS_L_Rostralmiddlefrontal_Area,
-    L_Superiorfrontal_Area = FS_L_Superiorfrontal_Area,
-    L_Superiorparietal_Area = FS_L_Superiorparietal_Area,
-    L_Superiortemporal_Area = FS_L_Superiortemporal_Area,
-    L_Supramarginal_Area = FS_L_Supramarginal_Area,
-    L_Frontalpole_Area = FS_L_Frontalpole_Area,
-    L_Temporalpole_Area = FS_L_Temporalpole_Area,
-    L_Transversetemporal_Area = FS_L_Transversetemporal_Area,
-    L_Insula_Area = FS_L_Insula_Area,
-    R_Bankssts_Area = FS_R_Bankssts_Area,
-    R_Caudalanteriorcingulate_Area = FS_R_Caudalanteriorcingulate_Area,
-    R_Caudalmiddlefrontal_Area = FS_R_Caudalmiddlefrontal_Area,
-    R_Cuneus_Area = FS_R_Cuneus_Area,
-    R_Entorhinal_Area = FS_R_Entorhinal_Area,
-    R_Fusiform_Area= FS_R_Fusiform_Area,
-    R_Inferiorparietal_Area = FS_R_Inferiorparietal_Area,
-    R_Inferiortemporal_Area = FS_R_Inferiortemporal_Area,
-    R_Isthmuscingulate_Area = FS_R_Isthmuscingulate_Area,
-    R_Lateraloccipital_Area = FS_R_Lateraloccipital_Area,
-    R_Lateralorbitofrontal_Area = FS_R_Lateralorbitofrontal_Area,
-    R_Lingual_Area = FS_R_Lingual_Area,
-    R_Medialorbitofrontal_Area = FS_R_Medialorbitofrontal_Area,
-    R_Middletemporal_Area = FS_R_Middletemporal_Area,
-    R_Parahippocampal_Area = FS_R_Parahippocampal_Area,
-    R_Paracentral_Area = FS_R_Paracentral_Area,
-    R_Parsopercularis_Area = FS_R_Parsopercularis_Area,
-    R_Parsorbitalis_Area = FS_R_Parsorbitalis_Area,
-    R_Parstriangularis_Area = FS_R_Parstriangularis_Area,
-    R_Pericalcarine_Area = FS_R_Pericalcarine_Area,
-    R_Postcentral_Area = FS_R_Postcentral_Area,
-    R_Posteriorcingulate_Area = FS_R_Posteriorcingulate_Area,            
-    R_Precuneus_Area = FS_R_Precuneus_Area,
-    R_Precentral_Area = FS_R_Precentral_Area,
-    R_Rostralanteriorcingulate_Area = FS_R_Rostralanteriorcingulate_Area,
-    R_Rostralmiddlefrontal_Area = FS_R_Rostralmiddlefrontal_Area,
-    R_Superiorfrontal_Area = FS_R_Superiorfrontal_Area,
-    R_Superiorparietal_Area = FS_R_Superiorparietal_Area,
-    R_Superiortemporal_Area = FS_R_Superiortemporal_Area, 
-    R_Supramarginal_Area = FS_R_Supramarginal_Area,
-    R_Frontalpole_Area = FS_R_Frontalpole_Area,
-    R_Temporalpole_Area = FS_R_Temporalpole_Area,
-    R_Transversetemporal_Area = FS_R_Transversetemporal_Area,            
-    R_Insula_Area = FS_R_Insula_Area)
-
-
-```
-
-```{r}
-## Welch t-test analysis with non-homogeneous of variance assumption
-
-data_connectomehcp_filtered_paired_cortical_surface_welcht_test  <- lapply(data_connectomehcp_filtered_paired_cortical_surface[c(2:69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = FALSE))
-
-data_connectomehcp_filtered_paired_cortical_surface_welcht_test
-```
-
-
-##  Multiple comparisons correction Holm-Bonferroni method
-
-```{r echo=TRUE}
-
-
-# p-values Welch t-test analysis with non-homogeneous of variance assumption
-
-pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test <- sapply(data_connectomehcp_filtered_paired_cortical_surface[c(2:69)], function(x) t.test(x ~ data_connectomehcp_filtered_paired_cortical_surface$Racial_identity, var.equal = FALSE)$p.value)
-
-pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test<- as.data.frame(pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test) %>% dplyr::rename(pvalue=pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test) %>% dplyr::select(1)
-
-
-
-## Execution of Holm-Bonferroni multiple comparison analysis 
-
-pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test$Holm =p.adjust(pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test$pvalue,method ="holm") 
-
-```
-
-```{r echo=FALSE}
-knitr::kable(pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test, format = "simple", align = "c", col.names = c('p-values', 'Holm'))
-
-
-pvalues_data_connectomehcp_filtered_paired_cortical_surface_welcht_test %>% filter(Holm <0.05)
-```
-
-### Table statistical summary of brain surface area 
-
-```{r}
-data_connectomehcp_filtered_paired_cortical_surface %>% 
-dplyr::rename(
-    "Left Banks STS" = L_Bankssts_Area,
-    "Left Caudal Anterior Cingulate" = L_Caudalanteriorcingulate_Area,
-    "Left Caudal Middle Frontal" = L_Caudalmiddlefrontal_Area,
-    "Left Cuneus" = L_Cuneus_Area,
-    "Left Entorhinal" = L_Entorhinal_Area,
-    "Left Fusiform" = L_Fusiform_Area, 
-    "Left Inferior Parietal" = L_Inferiorparietal_Area,
-    "Left Inferior Temporal" = L_Inferiortemporal_Area,
-    "Left Isthmuscingulate" = L_Isthmuscingulate_Area,
-    "Left Lateral Occipital" = L_Lateraloccipital_Area,
-    "Left Lateral Orbitofrontal" = L_Lateralorbitofrontal_Area,
-    "Left Lingual"  = L_Lingual_Area,
-    "Left Medialorbitofrontal" = L_Medialorbitofrontal_Area,
-    "Left Middletemporal" = L_Middletemporal_Area,
-    "Left Parahippocampal" = L_Parahippocampal_Area,
-    "Left Paracentral" = L_Paracentral_Area,
-    "Left Parsopercularis" = L_Parsopercularis_Area,
-    "Left Parsorbitalis" = L_Parsorbitalis_Area,
-    "Left Parstriangularis" = L_Parstriangularis_Area,
-    "Left Pericalcarine" = L_Pericalcarine_Area,
-    "Left Postcentral" = L_Postcentral_Area,
-    "Left Posterior Cingulate" = L_Posteriorcingulate_Area,
-    "Left Precentral" = L_Precentral_Area,
-    "Left Precuneus" = L_Precuneus_Area,
-    "Left Rostral anterior cingulate" = L_Rostralanteriorcingulate_Area,
-    "Left Rostral middle frontal" = L_Rostralmiddlefrontal_Area,
-    "Left Superior Frontal" = L_Superiorfrontal_Area,
-    "Left Superior Parietal" = L_Superiorparietal_Area,
-    "Left Superior Temporal" = L_Superiortemporal_Area,
-    "Left Supramarginal" = L_Supramarginal_Area,
-    "Left Frontal Pole" = L_Frontalpole_Area,
-    "Left Temporal Pole" = L_Temporalpole_Area,
-    "Left Transverse Temporal" = L_Transversetemporal_Area,
-    "Left Insula" = L_Insula_Area,
-    "Right Banks STS" = R_Bankssts_Area,
-    "Right Caudal Anterior Cingulate"= R_Caudalanteriorcingulate_Area,
-    "Right Caudal Middle Frontal" = R_Caudalmiddlefrontal_Area,
-    "Right Cuneus" = R_Cuneus_Area,
-    "Right Entorhinal" = R_Entorhinal_Area,
-    "Right Fusiform" = R_Fusiform_Area,
-    "Right Inferior Parietal" =R_Inferiorparietal_Area,
-    "Right Inferior Temporal" = R_Inferiortemporal_Area,
-    "Right Isthmuscingulate" = R_Isthmuscingulate_Area,
-    "Right Lateral Occipital" = R_Lateraloccipital_Area,
-    "Right Lateral Orbitofrontal" = R_Lateralorbitofrontal_Area,
-    "Right Lingual" = R_Lingual_Area,
-    "Right Medial Orbitofrontal" = R_Medialorbitofrontal_Area,
-    "Right Middle Temporal"= R_Middletemporal_Area,
-    "Right Parahippocampal" = R_Parahippocampal_Area,
-    "Right Paracentral" = R_Paracentral_Area,
-    "Right Parsopercularis"= R_Parsopercularis_Area,
-    "Right Parsorbitalis" = R_Parsorbitalis_Area,
-    "Right Parstriangularis" = R_Parstriangularis_Area,
-    "Right Pericalcarine" = R_Pericalcarine_Area,
-    "Right Postcentral" = R_Postcentral_Area,
-    "Right Posterior Cingulate" = R_Posteriorcingulate_Area,
-    "Right Precentral" = R_Precentral_Area,
-    "Right Precuneus" = R_Precuneus_Area,
-    "Right Rostral Anterior Cingulate" = R_Rostralanteriorcingulate_Area,
-    "Right Rostral Middle Frontal" = R_Rostralmiddlefrontal_Area,
-    "Right Superior Frontal" = R_Superiorfrontal_Area,
-    "Right Superior Parietal" = R_Superiorparietal_Area,
-    "Right Superior Temporal" = R_Superiortemporal_Area,
-    "Right Supramarginal" = R_Supramarginal_Area,
-    "Right Frontal Pole" = R_Frontalpole_Area,
-    "Right Temporal Pole" = R_Temporalpole_Area,                  
-    "Right Transverse Temporal" = R_Transversetemporal_Area,
-    "Right Insula" = R_Insula_Area ) %>%  tbl_summary(by = Racial_identity, statistic = list(all_continuous() ~ "{mean} ({sd})"), digits = all_continuous() ~ function(x) format(x, format = "e", digits = 5)) %>% add_difference() %>% add_q(method = "holm", pvalue_fun = function(x) style_pvalue(x, digits = 3)) %>%  as_gt()
-```
